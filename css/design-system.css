@@ -126,6 +126,12 @@
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.05);
+
+  /* Force key accent tones in light mode to stay vivid */
+  --clr-cyan-dim:   rgba(0,160,200,0.12);
+  --clr-red-dim:    rgba(200,0,40,0.08);
+  --clr-amber-dim:  rgba(200,130,0,0.1);
+  --clr-green-dim:  rgba(20,150,60,0.08);
 }
 
 /* ─── BASE ───────────────────────────────────────── */
@@ -140,8 +146,8 @@ body {
 /* ─── SCROLLBAR ──────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+::-webkit-scrollbar-thumb { background: var(--clr-card-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--clr-text-dim); }
 
 /* ─── TYPOGRAPHY UTILITIES ───────────────────────── */
 .text-xs    { font-size: var(--text-xs); }

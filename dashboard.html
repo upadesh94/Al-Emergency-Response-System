@@ -21,7 +21,9 @@
 
   <!-- Leaflet Map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -115,7 +117,9 @@
         <div class="text-sm fw-semibold text-white" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="topbar-user-name">Admin</div>
         <div class="text-xs text-muted" id="sidebar-user-label">Admin</div>
       </div>
-      <button class="btn btn-ghost btn-sm" id="logout-btn" title="Sign Out" style="padding:5px 8px"></button>
+      <button class="btn btn-ghost btn-sm flex items-center justify-center gap-2" id="logout-btn" title="Sign Out" style="width:100%; margin-top:8px;">
+        <span id="logout-icon-container"></span> Sign Out
+      </button>
     </div>
   </div>
 </aside>
@@ -559,7 +563,6 @@
             <div class="text-xs text-muted mt-1" id="admin-user-email"></div>
           </div>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="AuthService.logout()">⏻ Sign Out</button>
       </div>
 
       <div class="card">
@@ -906,7 +909,9 @@
       if (confirm('Sign out?')) AuthService.logout();
     });
 
-    // Alerts topbar btn
+    // Inject Logout icon
+    const logoutIcon = document.getElementById('logout-icon-container');
+    if (logoutIcon) logoutIcon.innerHTML = Icons.html('logOut', 16);
     document.getElementById('topbar-alerts-btn')?.addEventListener('click', () => Router.navigate('alerts'));
 
     // Theme Toggle Initialization
