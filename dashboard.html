@@ -11,6 +11,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 
+  <!-- Early Theme Setter to prevent Flash -->
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('aers_theme') || 'dark';
+      document.documentElement.dataset.theme = savedTheme;
+    })();
+  </script>
+
   <!-- Leaflet Map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -107,7 +115,7 @@
         <div class="text-sm fw-semibold text-white" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="topbar-user-name">Admin</div>
         <div class="text-xs text-muted" id="sidebar-user-label">Admin</div>
       </div>
-      <button class="btn btn-ghost btn-sm" id="logout-btn" title="Sign Out" style="padding:5px 8px" id="logout-icon-btn"></button>
+      <button class="btn btn-ghost btn-sm" id="logout-btn" title="Sign Out" style="padding:5px 8px"></button>
     </div>
   </div>
 </aside>
@@ -134,6 +142,10 @@
       <option value="full">🔴 Full</option>
     </select>
   </div>
+
+  <button class="topbar-btn" id="theme-toggle" title="Toggle Light/Dark Theme">
+    <div id="theme-icon-container" style="display:flex;"></div>
+  </button>
 
   <button class="topbar-btn" id="topbar-alerts-btn" title="Alerts">
     <span id="topbar-bell-icon"></span>
@@ -574,12 +586,51 @@
       <div id="user-roles-table"></div>
     </div>
 
-    <div class="card">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="fw-semibold text-white">Activity Log</h3>
-        <button class="btn btn-ghost btn-sm" onclick="clearActivityLog()">Clear Log</button>
+    <div class="grid grid-2 gap-6 mb-6">
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="fw-semibold text-white">Activity Log</h3>
+          <button class="btn btn-ghost btn-sm" onclick="clearActivityLog()">Clear Log</button>
+        </div>
+        <div id="activity-log"></div>
       </div>
-      <div id="activity-log"></div>
+
+      <!-- New Hospital Registration -->
+      <div class="card">
+        <h3 class="fw-semibold text-white mb-4">Register New Hospital</h3>
+        <p class="text-sm text-muted mb-6">Provision a new hospital system user and node in the network.</p>
+        <form id="admin-register-hospital-form">
+          <div class="form-group">
+            <label class="form-label" for="reg-hosp-name">Hospital Name</label>
+            <input type="text" id="reg-hosp-name" class="form-input" placeholder="e.g. City General" required>
+          </div>
+          <div class="grid grid-2 gap-4">
+            <div class="form-group">
+              <label class="form-label" for="reg-hosp-lat">Latitude</label>
+              <input type="number" step="0.0001" id="reg-hosp-lat" class="form-input" placeholder="19.0760" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-hosp-lng">Longitude</label>
+              <input type="number" step="0.0001" id="reg-hosp-lng" class="form-input" placeholder="72.8777" required>
+            </div>
+          </div>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:16px 0">
+          <div class="form-group">
+            <label class="form-label" for="reg-hosp-email">Admin Email (Login)</label>
+            <input type="email" id="reg-hosp-email" class="form-input" placeholder="admin@citygeneral.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-hosp-pass">Admin Password</label>
+            <input type="password" id="reg-hosp-pass" class="form-input" placeholder="Min 6 chars" required minlength="6">
+          </div>
+          <div class="flex items-center justify-end mt-6">
+            <button type="submit" class="btn btn-primary" id="reg-hosp-btn">
+              <span id="reg-hosp-spinner" class="login-spinner" style="display:none;width:14px;height:14px;margin-right:6px"></span>
+              Create Hospital Node
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -738,13 +789,14 @@
 <script src="js/ambulance.js"></script>
 <script src="js/analytics.js"></script>
 <script src="js/alerts.js"></script>
-<script src="js/admin.js"></script>
+<script type="module" src="js/admin.js"></script>
 <script src="js/public.js"></script>
 
 <!-- Firebase Auth guard + app bootstrap (ES module) -->
 <script type="module">
-  import { auth } from './js/firebase-config.js';
+  import { auth, db } from './js/firebase-config.js';
   import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { doc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
   import { AuthService } from './js/auth.js';
 
   window.AuthService = AuthService;
@@ -770,13 +822,10 @@
     document.getElementById('topbar-user-initials').textContent = userData.initials;
     document.getElementById('topbar-user-name').textContent     = userData.name;
     document.getElementById('sidebar-user-label').textContent   = capitalize(userData.role);
-
-    // Seed FIRST, then boot — ensures all data is in Store before initDashboard runs
-    seedMockData();
+    // Remove synchronous local seed — wait for cloud sync instead
 
     // Sync hospital status dropdown to stored value
     const statusSelect = document.getElementById('hospital-status-select');
-    if (statusSelect) statusSelect.value = Store.get('hospitalStatus') || 'available';
 
     // Register routes
     Router.register('dashboard',    () => initDashboard());
@@ -789,6 +838,53 @@
     Router.register('alerts',       () => initAlerts());
     Router.register('admin',        () => initAdmin());
     Router.register('public',       () => initPublic());
+
+    // --- Firebase Global Synchronization ---
+    const stateDocRef = doc(db, 'system', 'state');
+    
+    // 1. PUSH to Firebase
+    Store.setRemoteSync(async (stateCopy) => {
+      try {
+        await setDoc(stateDocRef, stateCopy);
+      } catch (err) {
+        console.error('Firestore Push Error:', err);
+      }
+    });
+
+    // 2. PULL from Firebase
+    let initialized = false;
+    onSnapshot(stateDocRef, (snap) => {
+      const data = snap.data();
+      if (data) {
+        Store.loadFromRemote(data); // Merges & emits 'remote_update'
+      } else {
+        // If empty cloud doc, we seed it once
+        if (typeof seedMockData === 'function') seedMockData();
+        Store.save(); 
+      }
+
+      // Bootstrap routing only after first pull
+      if (!initialized) {
+        initialized = true;
+        
+        if (statusSelect) statusSelect.value = Store.get('hospitalStatus') || 'available';
+        
+        Router.init('dashboard');
+        updateAlertBadge();
+        setTimeout(() => Toast.info('Live Sync Connected', `Welcome, ${userData.name}`), 400);
+
+        // Re-render currently active view automatically upon background changes
+        Store.on('remote_update', () => {
+          if (Router.currentParams.section) {
+            Router.navigate(Router.currentParams.section);
+          }
+        });
+      }
+    }, (error) => {
+      console.error('Live Sync Error:', error);
+      Toast.error('Sync Disconnected', 'Retrying connection to medical cloud...');
+      if (!initialized) Router.init('dashboard'); // fallback
+    });
 
     // Nav clicks
     document.querySelectorAll('.nav-item[data-route]').forEach(el => {
@@ -813,12 +909,26 @@
     // Alerts topbar btn
     document.getElementById('topbar-alerts-btn')?.addEventListener('click', () => Router.navigate('alerts'));
 
-    // Init router — this triggers initDashboard() with seeded data ready
-    Router.init('dashboard');
-    updateAlertBadge();
+    // Theme Toggle Initialization
+    const themeBtn = document.getElementById('theme-toggle');
+    const themeIconContainer = document.getElementById('theme-icon-container');
+    const updateThemeIcon = (theme) => {
+      themeIconContainer.innerHTML = theme === 'light' ? Icons.html('moon', 18) : Icons.html('sun', 18);
+    };
 
-    // Show welcome toast after init
-    setTimeout(() => Toast.info('Welcome back', `${userData.name} — ${capitalize(userData.role)}`), 500);
+    if (themeBtn) {
+      updateThemeIcon(document.documentElement.dataset.theme || 'dark');
+      themeBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.dataset.theme;
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = newTheme;
+        localStorage.setItem('aers_theme', newTheme);
+        updateThemeIcon(newTheme);
+      });
+    }
+
+    // Init router and Toast have been moved into the onSnapshot callback
+    // to ensure they only happen after cloud data is loaded.
   });
 </script>
 

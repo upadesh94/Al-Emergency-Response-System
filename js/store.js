@@ -39,8 +39,7 @@ const Store = (() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        state = deepMerge(defaults, parsed);
+        state = deepMerge(defaults, JSON.parse(saved));
       } else {
         state = JSON.parse(JSON.stringify(defaults));
       }
@@ -49,10 +48,36 @@ const Store = (() => {
     }
   }
 
+  // --- Remote Sync ---
+  let remoteSyncFn = null;
+  let syncTimeout = null;
+  let isReceivingRemote = false;
+
+  function setRemoteSync(fn) {
+    remoteSyncFn = fn;
+  }
+
+  function loadFromRemote(remoteState) {
+    if (!remoteState) return;
+    isReceivingRemote = true; // Prevent bounce-back saves
+    state = deepMerge(state, remoteState);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); // Keep local offline cache updated
+    emit('remote_update', state);
+    isReceivingRemote = false;
+  }
+
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {}
+
+    // Push to Firebase (debounced 1.5s) if we aren't currently pulling from it
+    if (remoteSyncFn && !isReceivingRemote) {
+      clearTimeout(syncTimeout);
+      syncTimeout = setTimeout(() => {
+        remoteSyncFn(JSON.parse(JSON.stringify(state))); // send copy
+      }, 1500);
+    }
   }
 
   function get(key) {
@@ -149,7 +174,7 @@ const Store = (() => {
 
   load();
 
-  return { get, set, update, on, emit, bedAvailability, totalBeds, addAlert, logActivity, save, load };
+  return { get, set, update, on, emit, bedAvailability, totalBeds, addAlert, logActivity, save, load, setRemoteSync, loadFromRemote };
 })();
 
 window.Store = Store;

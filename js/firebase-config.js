@@ -41,4 +41,4 @@ const db   = getFirestore(app);
 // Enable offline persistence (acts as local cache — swap point for AWS)
 enableIndexedDbPersistence(db).catch(() => {});
 
-export { app, auth, db };
+export { app, auth, db, firebaseConfig };

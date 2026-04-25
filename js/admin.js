@@ -1,11 +1,75 @@
-/**
- * admin.js — Access Control, Role Management & Activity Log
- */
+import { firebaseConfig } from './firebase-config.js';
 
 function initAdmin() {
   renderUserRoles();
   renderActivityLog();
   renderAdminProfile();
+  initRegisterHospital();
+}
+
+function initRegisterHospital() {
+  const form = document.getElementById('admin-register-hospital-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('reg-hosp-btn');
+    const spinner = document.getElementById('reg-hosp-spinner');
+    
+    // Form values
+    const name  = document.getElementById('reg-hosp-name').value.trim();
+    const lat   = document.getElementById('reg-hosp-lat').value;
+    const lng   = document.getElementById('reg-hosp-lng').value;
+    const email = document.getElementById('reg-hosp-email').value.trim();
+    const pass  = document.getElementById('reg-hosp-pass').value;
+
+    btn.disabled = true;
+    spinner.style.display = 'inline-block';
+
+    try {
+      // 1. Create User via Firebase Auth REST API (prevents signing out current admin)
+      const signupUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`;
+      const res = await fetch(signupUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass, returnSecureToken: false })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error?.message || 'Failed to create hospital admin account');
+      }
+
+      // 2. Save hospital node data to Store
+      const hospitals = Store.get('network_nodes') || [];
+      hospitals.push({
+        id: 'hosp_' + Date.now(),
+        name,
+        location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        adminEmail: email,
+        uid: data.localId,
+        status: 'active',
+        createdAt: new Date().toISOString()
+      });
+      Store.set('network_nodes', hospitals);
+
+      // 3. Log activity and show success
+      Toast.success('Hospital Registered', `${name} has been added to the network.`);
+      const currentUser = Store.get('user.name') || 'Admin';
+      Store.logActivity('Registered Hospital', currentUser, `Added ${name} (${email})`);
+      renderActivityLog();
+
+      form.reset();
+    } catch (err) {
+      let msg = err.message;
+      if (msg === 'EMAIL_EXISTS') msg = 'An account with this email already exists.';
+      Toast.error('Registration Failed', msg);
+    } finally {
+      btn.disabled = false;
+      spinner.style.display = 'none';
+    }
+  });
 }
 
 function renderAdminProfile() {
