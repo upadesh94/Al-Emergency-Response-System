@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AERS — Hospital Emergency Dashboard</title>
+  <meta name="description" content="Real-time hospital emergency management dashboard with bed tracking, ambulance map, doctor management, and analytics." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/design-system.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon" id="logo-icon"></div>
+    <div class="sidebar-logo-text">
+      <div class="sidebar-logo-title">AERS</div>
+      <div class="sidebar-logo-sub">Emergency Response</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="sidebar-section-label">Main</div>
+
+    <div class="nav-item active" data-route="dashboard" id="nav-dashboard">
+      <span class="nav-icon" id="ni-dashboard"></span>
+      <span class="nav-label">Dashboard</span>
+    </div>
+
+    <div class="nav-item" data-route="emergency" id="nav-emergency">
+      <span class="nav-icon" id="ni-emergency"></span>
+      <span class="nav-label">Emergency Requests</span>
+      <span class="nav-badge" id="nav-badge-emergency">6</span>
+    </div>
+
+    <div class="nav-item" data-route="ambulance" id="nav-ambulance">
+      <span class="nav-icon" id="ni-ambulance"></span>
+      <span class="nav-label">Ambulance Tracking</span>
+    </div>
+
+    <div class="sidebar-section-label" style="margin-top:var(--sp-4)">Management</div>
+
+    <div class="nav-item" data-route="beds" id="nav-beds">
+      <span class="nav-icon" id="ni-beds"></span>
+      <span class="nav-label">Beds & Resources</span>
+    </div>
+
+    <div class="nav-item" data-route="doctors" id="nav-doctors">
+      <span class="nav-icon" id="ni-doctors"></span>
+      <span class="nav-label">Doctors</span>
+    </div>
+
+    <div class="nav-item" data-route="preadmission" id="nav-preadmission">
+      <span class="nav-icon" id="ni-pre"></span>
+      <span class="nav-label">Pre-Admission</span>
+    </div>
+
+    <div class="sidebar-section-label" style="margin-top:var(--sp-4)">Reports</div>
+
+    <div class="nav-item" data-route="analytics" id="nav-analytics">
+      <span class="nav-icon" id="ni-analytics"></span>
+      <span class="nav-label">Analytics</span>
+    </div>
+
+    <div class="nav-item" data-route="alerts" id="nav-alerts">
+      <span class="nav-icon" id="ni-alerts"></span>
+      <span class="nav-label">Alerts</span>
+      <span class="nav-badge" id="nav-badge-alerts">7</span>
+    </div>
+
+    <div class="sidebar-section-label" style="margin-top:var(--sp-4)">System</div>
+
+    <div class="nav-item" data-route="admin" id="nav-admin">
+      <span class="nav-icon" id="ni-admin"></span>
+      <span class="nav-label">Admin / Access</span>
+    </div>
+
+    <div class="nav-item" data-route="public" id="nav-public">
+      <span class="nav-icon" id="ni-public"></span>
+      <span class="nav-label">Public Status</span>
+    </div>
+  </nav>
+
+  <!-- Sidebar user footer -->
+  <div style="padding:var(--sp-4);border-top:1px solid var(--clr-border)">
+    <div class="flex items-center gap-3">
+      <div class="user-avatar" id="sidebar-avatar">DA</div>
+      <div style="flex:1;overflow:hidden">
+        <div class="text-sm fw-semibold text-white" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="topbar-user-name">Admin</div>
+        <div class="text-xs text-muted" id="sidebar-user-label">Admin</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="logout-btn" title="Sign Out" style="padding:5px 8px" id="logout-icon-btn"></button>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════
+     TOP BAR
+══════════════════════════════════════════════ -->
+<header class="topbar">
+  <div>
+    <div class="topbar-title" id="topbar-page-title">Dashboard</div>
+  </div>
+
+  <div class="live-dot">Live</div>
+
+  <div style="flex:1"></div>
+
+  <!-- Hospital Status -->
+  <div class="flex items-center gap-3">
+    <span class="text-xs text-muted">Status:</span>
+    <select id="hospital-status-select" class="form-input"
+            style="width:auto;padding:4px 12px;font-size:12px;border-radius:9999px">
+      <option value="available">🟢 Available</option>
+      <option value="emergency_only">🟡 Emergency Only</option>
+      <option value="full">🔴 Full</option>
+    </select>
+  </div>
+
+  <button class="topbar-btn" id="topbar-alerts-btn" title="Alerts">
+    <span id="topbar-bell-icon"></span>
+    <span class="notif-count" id="alert-topbar-count">7</span>
+  </button>
+
+  <div class="user-avatar" id="topbar-user-initials">DA</div>
+</header>
+
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT AREA
+══════════════════════════════════════════════ -->
+<main class="main-content">
+
+  <!-- ── 1. DASHBOARD ───────────────────────── -->
+  <div id="page-dashboard" class="section-page active">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Emergency Dashboard</h1>
+        <p class="page-subtitle">Real-time overview of hospital operations</p>
+      </div>
+      <div class="flex gap-3 items-center">
+        <span class="badge" id="hospital-status-badge">🟢 Available</span>
+        <span class="live-dot">Live</span>
+      </div>
+    </div>
+
+    <!-- Stat Cards Row 1 -->
+    <div class="grid grid-4 gap-4 mb-6">
+      <div class="stat-card green">
+        <div class="stat-icon" id="sc-icon-beds"></div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-beds-available">—</div>
+          <div class="stat-label">Beds Available</div>
+          <div class="stat-change text-green">General + ICU combined</div>
+        </div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon" id="sc-icon-emerg"></div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-pending-requests">—</div>
+          <div class="stat-label">Pending Requests</div>
+          <div class="stat-change">Awaiting response</div>
+        </div>
+      </div>
+      <div class="stat-card cyan">
+        <div class="stat-icon" id="sc-icon-docs"></div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-doctors-on-duty">—</div>
+          <div class="stat-label">Doctors On Duty</div>
+          <div class="stat-change">Available now</div>
+        </div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon" id="sc-icon-amb"></div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-ambulances-incoming">—</div>
+          <div class="stat-label">Ambulances Incoming</div>
+          <div class="stat-change">En route</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat Cards Row 2 -->
+    <div class="grid grid-4 gap-4 mb-8">
+      <div class="stat-card red">
+        <div class="stat-icon" id="sc-icon-icu"></div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-icu-available">—</div>
+          <div class="stat-label">ICU Beds Free</div>
+        </div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon" id="sc-icon-vent"></div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-ventilators-available">—</div>
+          <div class="stat-label">Ventilators Free</div>
+        </div>
+      </div>
+      <div class="stat-card cyan" style="grid-column:span 2">
+        <div style="display:flex;gap:2.5rem;flex-wrap:wrap;align-items:flex-start">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span id="pb-icon-gen" style="color:var(--clr-cyan)"></span>
+              <span class="text-xs text-muted" style="font-weight:600;text-transform:uppercase;letter-spacing:.05em">General Beds</span>
+            </div>
+            <div class="progress-bar" style="width:160px;margin-bottom:4px"><div class="progress-fill" id="pb-general" style="width:0%"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span id="pb-icon-icu" style="color:var(--clr-red)"></span>
+              <span class="text-xs text-muted" style="font-weight:600;text-transform:uppercase;letter-spacing:.05em">ICU Beds</span>
+            </div>
+            <div class="progress-bar" style="width:160px;margin-bottom:4px"><div class="progress-fill danger" id="pb-icu" style="width:0%"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span id="pb-icon-oxy" style="color:var(--clr-amber)"></span>
+              <span class="text-xs text-muted" style="font-weight:600;text-transform:uppercase;letter-spacing:.05em">Oxygen Beds</span>
+            </div>
+            <div class="progress-bar" style="width:160px;margin-bottom:4px"><div class="progress-fill warning" id="pb-oxygen" style="width:0%"></div></div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span id="pb-icon-ven" style="color:var(--clr-purple)"></span>
+              <span class="text-xs text-muted" style="font-weight:600;text-transform:uppercase;letter-spacing:.05em">Ventilators</span>
+            </div>
+            <div class="progress-bar" style="width:160px;margin-bottom:4px"><div class="progress-fill warning" id="pb-vent" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Row: Queue + Ambulance -->
+    <div class="grid grid-2 gap-6">
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="fw-semibold text-white">Priority Queue</h3>
+          <button class="btn btn-ghost btn-sm" onclick="Router.navigate('emergency')">View All →</button>
+        </div>
+        <div id="priority-queue"></div>
+      </div>
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="fw-semibold text-white">Ambulances Incoming</h3>
+          <button class="btn btn-ghost btn-sm" onclick="Router.navigate('ambulance')">Track →</button>
+        </div>
+        <div id="dash-ambulance-list" class="flex flex-col gap-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. BEDS & RESOURCES ────────────────── -->
+  <div id="page-beds" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Beds & Resource Management</h1>
+        <p class="page-subtitle">Monitor and manage all bed types and medical resources</p>
+      </div>
+      <button class="btn btn-primary" onclick="openBedEdit('general')">+ Update Beds</button>
+    </div>
+
+    <div id="bed-alerts" class="mb-6"></div>
+
+    <div class="grid grid-2 gap-6 mb-6">
+      <div class="resource-card" id="bed-card-general"></div>
+      <div class="resource-card" id="bed-card-icu"></div>
+      <div class="resource-card" id="bed-card-oxygen"></div>
+      <div class="resource-card" id="bed-card-ventilator"></div>
+    </div>
+  </div>
+
+  <!-- ── 3. DOCTORS ─────────────────────────── -->
+  <div id="page-doctors" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Doctor Management</h1>
+        <p class="page-subtitle">Live doctor status, specialty assignments, shift schedule</p>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-4 gap-4 mb-6">
+      <div class="stat-card cyan">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value" id="doc-stat-total">—</div>
+        <div class="stat-label">Total Doctors</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="doc-stat-duty">—</div>
+        <div class="stat-label">On Duty</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-value" id="doc-stat-emerg">—</div>
+        <div class="stat-label">Emergency Specialists</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon">📅</div>
+        <div class="stat-value">3</div>
+        <div class="stat-label">Shifts Active</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2 gap-6" style="align-items:start">
+      <!-- Doctor List -->
+      <div class="card">
+        <div class="flex items-center gap-3 mb-4">
+          <h3 class="fw-semibold text-white flex-1">Doctors</h3>
+          <div id="doctor-filter-btns" class="flex gap-2">
+            <button class="btn btn-primary btn-sm" data-filter="all" onclick="setDoctorFilter('all')">All</button>
+            <button class="btn btn-ghost btn-sm" data-filter="duty" onclick="setDoctorFilter('duty')">On Duty</button>
+            <button class="btn btn-ghost btn-sm" data-filter="off" onclick="setDoctorFilter('off')">Off Duty</button>
+          </div>
+        </div>
+        <div class="form-group mb-4">
+          <input type="search" id="doctor-search" class="form-input" placeholder="🔍 Search doctors…" />
+        </div>
+        <div id="doctor-list" class="flex flex-col gap-3"></div>
+      </div>
+
+      <!-- Shift Schedule -->
+      <div>
+        <h3 class="fw-semibold text-white mb-4">Shift Schedule</h3>
+        <div id="shift-schedule"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. EMERGENCY REQUESTS ──────────────── -->
+  <div id="page-emergency" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Emergency Requests</h1>
+        <p class="page-subtitle">Incoming patient requests requiring immediate response</p>
+      </div>
+    </div>
+
+    <div class="grid grid-4 gap-4 mb-6" id="emergency-stats">
+      <div class="stat-card amber">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-value" id="emerg-stat-pending">—</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="emerg-stat-accepted">—</div>
+        <div class="stat-label">Accepted</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">❌</div>
+        <div class="stat-value" id="emerg-stat-rejected">—</div>
+        <div class="stat-label">Rejected</div>
+      </div>
+      <div class="stat-card cyan">
+        <div class="stat-icon">📋</div>
+        <div class="stat-value" id="emerg-stat-total">—</div>
+        <div class="stat-label">Total Today</div>
+      </div>
+    </div>
+
+    <div id="emergency-request-list" class="flex flex-col gap-4"></div>
+  </div>
+
+  <!-- ── 5. PRE-ADMISSION ───────────────────── -->
+  <div id="page-preadmission" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Patient Pre-Admission</h1>
+        <p class="page-subtitle">Prepare for incoming patients before they arrive</p>
+      </div>
+    </div>
+
+    <div class="grid grid-3 gap-4 mb-6">
+      <div class="stat-card cyan"><div class="stat-icon">📋</div><div class="stat-value" id="pa-stat-total">—</div><div class="stat-label">Total Queued</div></div>
+      <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value" id="pa-stat-ready">—</div><div class="stat-label">Rooms Ready</div></div>
+      <div class="stat-card amber"><div class="stat-icon">⏳</div><div class="stat-value" id="pa-stat-pending">—</div><div class="stat-label">Awaiting Assignment</div></div>
+    </div>
+
+    <div class="grid grid-2 gap-6" style="align-items:start">
+      <div>
+        <h3 class="fw-semibold text-white mb-4">Pre-Admission Queue</h3>
+        <div id="preadmission-list"></div>
+      </div>
+      <div class="card">
+        <h3 class="fw-semibold text-white mb-6">Add Pre-Admission</h3>
+        <form id="preadmission-form">
+          <div class="form-group"><label class="form-label">Patient Name</label><input type="text" name="pa-name" class="form-input" placeholder="Full name" required /></div>
+          <div class="grid grid-2 gap-4">
+            <div class="form-group"><label class="form-label">Age</label><input type="number" name="pa-age" class="form-input" placeholder="28" required /></div>
+            <div class="form-group"><label class="form-label">Blood Group</label>
+              <select name="pa-blood" class="form-select">
+                <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Condition / Diagnosis</label><input type="text" name="pa-condition" class="form-input" placeholder="e.g. Stroke, AMI" required /></div>
+          <div class="form-group"><label class="form-label">ETA (minutes)</label><input type="number" name="pa-eta" class="form-input" placeholder="15" /></div>
+          <div class="form-group"><label class="form-label">Medical History</label><textarea name="pa-history" class="form-textarea" placeholder="Known allergies, conditions…"></textarea></div>
+          <button type="submit" class="btn btn-primary w-full">+ Add to Queue</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 6. AMBULANCE TRACKING ──────────────── -->
+  <div id="page-ambulance" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Ambulance Tracking</h1>
+        <p class="page-subtitle">Live map with real-time ETA countdown and coordinate</p>
+      </div>
+    </div>
+
+    <div class="grid grid-3 gap-4 mb-6">
+      <div class="stat-card amber"><div class="stat-icon">🚑</div><div class="stat-value" id="amb-stat-total">—</div><div class="stat-label">Total Incoming</div></div>
+      <div class="stat-card red"><div class="stat-icon">🔴</div><div class="stat-value" id="amb-stat-arriving">—</div><div class="stat-label">Arriving Now</div></div>
+      <div class="stat-card cyan"><div class="stat-icon">🛣️</div><div class="stat-value" id="amb-stat-enroute">—</div><div class="stat-label">En Route</div></div>
+    </div>
+
+    <div class="grid gap-6" style="grid-template-columns:1fr 340px">
+      <!-- Map -->
+      <div>
+        <div class="card" style="padding:var(--sp-3);margin-bottom:var(--sp-4)">
+          <div class="flex gap-4 text-xs text-muted">
+            <span>🏥 Hospital</span>
+            <span style="color:#ff3b5c">🔴 Critical</span>
+            <span style="color:#f59e0b">🟡 High</span>
+            <span style="color:#22c55e">🟢 Medium/Low</span>
+            <span class="ml-auto">CartoDB Dark Matter tiles</span>
+          </div>
+        </div>
+        <div id="ambulance-map"></div>
+      </div>
+
+      <!-- Queue -->
+      <div>
+        <h3 class="fw-semibold text-white mb-4">Ambulance Queue</h3>
+        <div id="ambulance-queue" class="flex flex-col gap-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. ANALYTICS ───────────────────────── -->
+  <div id="page-analytics" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Analytics & Reports</h1>
+        <p class="page-subtitle">Emergency trends, performance metrics, and resource utilization</p>
+      </div>
+    </div>
+
+    <div class="grid grid-4 gap-4 mb-6">
+      <div class="stat-card cyan"><div class="stat-icon">📊</div><div class="stat-value" id="an-stat-cases">—</div><div class="stat-label">Cases Today</div></div>
+      <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value" id="an-stat-success">—</div><div class="stat-label">Success Rate %</div></div>
+      <div class="stat-card amber"><div class="stat-icon">⏱️</div><div class="stat-value" id="an-stat-avg-resp">—</div><div class="stat-label">Avg Response (min)</div></div>
+      <div class="stat-card red"><div class="stat-icon">🛏️</div><div class="stat-value" id="an-stat-utiliz">—</div><div class="stat-label">Bed Utilization %</div></div>
+    </div>
+
+    <div class="grid grid-2 gap-6 mb-6">
+      <div class="card">
+        <h3 class="fw-semibold text-white mb-4">Daily Emergency Cases (Last 7 Days)</h3>
+        <div class="chart-wrap"><canvas id="chart-daily"></canvas></div>
+      </div>
+      <div class="card">
+        <h3 class="fw-semibold text-white mb-4">Average Response Time (min)</h3>
+        <div class="chart-wrap"><canvas id="chart-response"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid grid-2 gap-6">
+      <div class="card">
+        <h3 class="fw-semibold text-white mb-4">Bed Utilization by Type</h3>
+        <div class="chart-wrap"><canvas id="chart-beds"></canvas></div>
+      </div>
+      <div class="card">
+        <h3 class="fw-semibold text-white mb-4">Peak Hours (Calls/Hour)</h3>
+        <div class="chart-wrap"><canvas id="chart-peak"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 8. ALERTS ───────────────────────────── -->
+  <div id="page-alerts" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Alerts & Notifications</h1>
+        <p class="page-subtitle">System-wide alerts requiring attention</p>
+      </div>
+      <button class="btn btn-ghost" onclick="dismissAllAlerts()">Dismiss All</button>
+    </div>
+
+    <div class="grid grid-4 gap-4 mb-6">
+      <div class="stat-card red"><div class="stat-icon">🔔</div><div class="stat-value" id="alert-stat-active">—</div><div class="stat-label">Active Alerts</div></div>
+      <div class="stat-card red"><div class="stat-icon">🚨</div><div class="stat-value" id="alert-stat-critical">—</div><div class="stat-label">Critical</div></div>
+      <div class="stat-card amber"><div class="stat-icon">⚠️</div><div class="stat-value" id="alert-stat-warning">—</div><div class="stat-label">Warnings</div></div>
+      <div class="stat-card cyan"><div class="stat-icon">ℹ️</div><div class="stat-value" id="alert-stat-info">—</div><div class="stat-label">Info</div></div>
+    </div>
+
+    <div class="card mb-6">
+      <h3 class="fw-semibold text-white mb-4">Active Alerts</h3>
+      <div id="alerts-list"></div>
+    </div>
+
+    <div class="card">
+      <h3 class="fw-semibold text-white mb-4">Dismissed Alerts</h3>
+      <div id="dismissed-alerts-list"></div>
+    </div>
+  </div>
+
+  <!-- ── 9. ADMIN / ACCESS ───────────────────── -->
+  <div id="page-admin" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Admin & Access Control</h1>
+        <p class="page-subtitle">User roles, permissions, and activity log</p>
+      </div>
+    </div>
+
+    <div class="grid grid-2 gap-6 mb-6" style="align-items:start">
+      <div class="card">
+        <h3 class="fw-semibold text-white mb-2">Logged In As</h3>
+        <div class="flex items-center gap-4 mb-4">
+          <div class="user-avatar" style="width:52px;height:52px;font-size:1.2rem" id="topbar-user-initials-admin">DA</div>
+          <div>
+            <div class="text-lg fw-bold text-white" id="admin-user-name">Admin</div>
+            <span class="badge" id="admin-user-role">Admin</span>
+            <div class="text-xs text-muted mt-1" id="admin-user-email"></div>
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="AuthService.logout()">⏻ Sign Out</button>
+      </div>
+
+      <div class="card">
+        <h3 class="fw-semibold text-white mb-4">Role Permission Map</h3>
+        <div class="text-sm text-muted flex flex-col gap-2">
+          <div class="flex items-center gap-3">
+            <span class="badge role-admin">Admin</span>
+            <span>Full access — all sections, user management</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="badge role-staff">Staff</span>
+            <span>Beds, pre-admission, emergency requests</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="badge role-doctor">Doctor</span>
+            <span>Patient details, duty toggle, analytics read</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-6">
+      <h3 class="fw-semibold text-white mb-4">User Management</h3>
+      <div id="user-roles-table"></div>
+    </div>
+
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="fw-semibold text-white">Activity Log</h3>
+        <button class="btn btn-ghost btn-sm" onclick="clearActivityLog()">Clear Log</button>
+      </div>
+      <div id="activity-log"></div>
+    </div>
+  </div>
+
+  <!-- ── 10. PUBLIC STATUS PAGE ─────────────── -->
+  <div id="page-public" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Public Status Page</h1>
+        <p class="page-subtitle">Real-time hospital availability for ambulances and external systems</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="public-refresh-time" class="text-xs text-muted"></span>
+        <span class="live-dot">Auto-Refresh</span>
+      </div>
+    </div>
+
+    <div class="grid grid-2 gap-6 mb-6" style="align-items:start">
+      <div class="public-status-card" style="text-align:center">
+        <h3 class="fw-semibold text-white mb-6">Hospital Status</h3>
+        <div id="public-status-indicator"></div>
+        <div class="grid gap-3 mt-6" style="grid-template-columns:repeat(2,1fr)">
+          <!-- filled by js -->
+        </div>
+      </div>
+      <div>
+        <h3 class="fw-semibold text-white mb-4">Available Specialties</h3>
+        <div id="public-specialties" class="flex flex-wrap gap-2 mb-6"></div>
+        <div class="grid gap-3" id="public-stats-row" style="grid-template-columns:repeat(2,1fr)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="fw-semibold text-white">Live API Endpoint</h3>
+        <span class="badge badge-green">GET /api/status</span>
+      </div>
+      <p class="text-sm text-muted mb-4">
+        This JSON payload is served to ambulance dispatch systems and external integrations in real-time.
+      </p>
+      <div class="json-block" id="public-json"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════ -->
+
+<!-- Bed Edit Modal -->
+<div class="modal-overlay hidden" id="modal-bed-edit" onclick="if(event.target===this)closeBedEditModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title" id="bed-edit-title">Edit Beds</h3>
+      <button class="modal-close" onclick="closeBedEditModal()">✕</button>
+    </div>
+    <form id="bed-edit-form">
+      <input type="hidden" id="bed-edit-type" value="general" />
+      <div class="form-group">
+        <label class="form-label">Total Beds</label>
+        <input type="number" id="bed-edit-total" class="form-input" min="0" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Currently Occupied</label>
+        <input type="number" id="bed-edit-occupied" class="form-input" min="0" required />
+      </div>
+      <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary flex-1">Save Changes</button>
+        <button type="button" class="btn btn-ghost" onclick="closeBedEditModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Doctor Detail Modal -->
+<div class="modal-overlay hidden" id="modal-doctor" onclick="if(event.target===this)closeDoctorModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modal-doctor-title">Doctor Details</h3>
+      <button class="modal-close" onclick="closeDoctorModal()">✕</button>
+    </div>
+    <div id="modal-doctor-body"></div>
+  </div>
+</div>
+
+<!-- Emergency Request Detail Modal -->
+<div class="modal-overlay hidden" id="modal-request" onclick="if(event.target===this)closeRequestModal()">
+  <div class="modal-box" style="max-width:620px">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modal-req-title">Emergency Request</h3>
+      <button class="modal-close" onclick="closeRequestModal()">✕</button>
+    </div>
+    <div id="modal-req-body"></div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- ══════════════════════════════════════════════
+     SCRIPTS (order matters)
+══════════════════════════════════════════════ -->
+<script src="js/store.js"></script>
+<script src="js/icons.js"></script>
+<script>
+// Inject SVG icons into static HTML elements once icons.js is loaded
+(function injectStaticIcons() {
+  const I = (name, sz) => Icons.html(name, sz || 18);
+  // Sidebar logo
+  const logo = document.getElementById('logo-icon');
+  if (logo) logo.innerHTML = I('hospital', 20);
+  // Nav icons
+  const navMap = {
+    'ni-dashboard': 'dashboard', 'ni-emergency': 'emergency', 'ni-ambulance': 'ambulance',
+    'ni-beds': 'bed', 'ni-doctors': 'stethoscope', 'ni-pre': 'clipboard',
+    'ni-analytics': 'analytics', 'ni-alerts': 'bell', 'ni-admin': 'shield', 'ni-public': 'globe'
+  };
+  Object.entries(navMap).forEach(([id, icon]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = I(icon);
+  });
+  // Topbar bell
+  const bell = document.getElementById('topbar-bell-icon');
+  if (bell) bell.innerHTML = I('bell', 16);
+  // Logout icon
+  const logout = document.getElementById('logout-btn');
+  if (logout && !logout.innerHTML.trim()) logout.innerHTML = I('logOut', 15);
+  // Stat card icons
+  const statMap = {
+    'sc-icon-beds': 'bed', 'sc-icon-emerg': 'emergency', 'sc-icon-docs': 'stethoscope',
+    'sc-icon-amb': 'ambulance', 'sc-icon-icu': 'heart', 'sc-icon-vent': 'wind'
+  };
+  Object.entries(statMap).forEach(([id, icon]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = I(icon, 22);
+  });
+  // Progress bar icons
+  const pbMap = { 'pb-icon-gen': 'bed', 'pb-icon-icu': 'heart', 'pb-icon-oxy': 'wind', 'pb-icon-ven': 'activity' };
+  Object.entries(pbMap).forEach(([id, icon]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = I(icon, 14);
+  });
+
+})();
+</script>
+
+<script src="js/toast.js"></script>
+<script src="js/data-mock.js"></script>
+<script src="js/router.js"></script>
+<script src="js/dashboard.js"></script>
+
+<script src="js/beds.js"></script>
+<script src="js/doctors.js"></script>
+<script src="js/emergency.js"></script>
+<script src="js/preadmission.js"></script>
+<script src="js/ambulance.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/alerts.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/public.js"></script>
+
+<!-- Firebase Auth guard + app bootstrap (ES module) -->
+<script type="module">
+  import { auth } from './js/firebase-config.js';
+  import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { AuthService } from './js/auth.js';
+
+  window.AuthService = AuthService;
+
+  // Bootstrap once auth is confirmed
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
+
+    const role = ({'admin@hospital.com':'admin','staff@hospital.com':'staff','doctor@hospital.com':'doctor'})[user.email] || 'staff';
+    const userData = {
+      uid: user.uid, email: user.email, role,
+      initials: user.email.substring(0,2).toUpperCase(),
+      name: user.displayName || user.email.split('@')[0],
+    };
+
+    Store.set('user', userData);
+    sessionStorage.setItem('aers_user', JSON.stringify(userData));
+
+    // Populate UI
+    document.getElementById('topbar-user-initials').textContent = userData.initials;
+    document.getElementById('topbar-user-name').textContent     = userData.name;
+    document.getElementById('sidebar-user-label').textContent   = capitalize(userData.role);
+
+    // Seed FIRST, then boot — ensures all data is in Store before initDashboard runs
+    seedMockData();
+
+    // Sync hospital status dropdown to stored value
+    const statusSelect = document.getElementById('hospital-status-select');
+    if (statusSelect) statusSelect.value = Store.get('hospitalStatus') || 'available';
+
+    // Register routes
+    Router.register('dashboard',    () => initDashboard());
+    Router.register('beds',         () => initBeds());
+    Router.register('doctors',      () => initDoctors());
+    Router.register('emergency',    () => initEmergency());
+    Router.register('preadmission', () => initPreAdmission());
+    Router.register('ambulance',    () => initAmbulance());
+    Router.register('analytics',    () => initAnalytics());
+    Router.register('alerts',       () => initAlerts());
+    Router.register('admin',        () => initAdmin());
+    Router.register('public',       () => initPublic());
+
+    // Nav clicks
+    document.querySelectorAll('.nav-item[data-route]').forEach(el => {
+      el.addEventListener('click', () => Router.navigate(el.dataset.route));
+    });
+
+    // Hospital status toggle
+    if (statusSelect) {
+      statusSelect.addEventListener('change', function () {
+        Store.set('hospitalStatus', this.value);
+        renderHospitalStatusBadge();
+        Toast.info('Status Updated', `Hospital: ${this.value.replace('_', ' ')}`);
+        Store.logActivity('Status Changed', userData.name, `Set to ${this.value}`);
+      });
+    }
+
+    // Logout
+    document.getElementById('logout-btn')?.addEventListener('click', () => {
+      if (confirm('Sign out?')) AuthService.logout();
+    });
+
+    // Alerts topbar btn
+    document.getElementById('topbar-alerts-btn')?.addEventListener('click', () => Router.navigate('alerts'));
+
+    // Init router — this triggers initDashboard() with seeded data ready
+    Router.init('dashboard');
+    updateAlertBadge();
+
+    // Show welcome toast after init
+    setTimeout(() => Toast.info('Welcome back', `${userData.name} — ${capitalize(userData.role)}`), 500);
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AERS — AI Emergency Response System | Login</title>
+  <meta name="description" content="Secure login to the AI Emergency Response System Hospital Dashboard." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/design-system.css" />
+  <link rel="stylesheet" href="css/components.css" />
+
+  <style>
+    .login-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+    }
+    .login-left {
+      background: radial-gradient(ellipse at 30% 30%, rgba(255,59,92,0.18), transparent 60%),
+                  radial-gradient(ellipse at 80% 80%, rgba(0,212,255,0.12), transparent 60%),
+                  var(--clr-bg-2);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 4rem;
+      border-right: 1px solid var(--clr-border);
+      position: relative; overflow: hidden;
+    }
+    .login-left::before {
+      content: '';
+      position: absolute; top: -100px; left: -100px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(255,59,92,0.08), transparent 70%);
+      animation: spin 20s linear infinite;
+    }
+    .login-right {
+      background: var(--clr-bg);
+      display: flex; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--clr-red-dim);
+      border: 1px solid rgba(255,59,92,0.25);
+      border-radius: 9999px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--clr-red);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+    }
+    .hero-title {
+      font-size: 3rem; font-weight: 800;
+      color: var(--clr-white); line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, var(--clr-red), var(--clr-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-desc {
+      font-size: 1rem; color: var(--clr-text-muted);
+      line-height: 1.7; max-width: 400px; margin-bottom: 2.5rem;
+    }
+    .feature-bullets { display: flex; flex-direction: column; gap: 1rem; }
+    .feature-bullet {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 0.875rem; color: var(--clr-text-dim);
+    }
+    .feature-bullet-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .demo-hint {
+      background: var(--clr-surface-2);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--r-lg);
+      padding: 1rem 1.25rem;
+      margin-top: 1.5rem;
+      font-size: var(--text-xs);
+      color: var(--clr-text-muted);
+      line-height: 1.7;
+    }
+    .demo-hint strong { color: var(--clr-text-dim); }
+    .login-spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: rgba(0,0,0,0.8);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .login-error-msg {
+      color: var(--clr-red);
+      font-size: var(--text-xs);
+      margin-top: -0.5rem;
+      margin-bottom: 0.75rem;
+      min-height: 20px;
+    }
+    @media (max-width: 768px) {
+      .login-grid { grid-template-columns: 1fr; }
+      .login-left { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-grid">
+
+  <!-- ── LEFT HERO PANEL ── -->
+  <div class="login-left">
+    <div style="max-width: 460px; position:relative; z-index:1">
+      <div class="hero-badge">🚨 AI-Powered Emergency Response</div>
+      <h1 class="hero-title">
+        City Hospital<br><span>Emergency Hub</span>
+      </h1>
+      <p class="hero-desc">
+        A real-time command center for hospital staff — manage beds, track ambulances
+        on live map, coordinate doctors, and respond to emergencies faster than ever.
+      </p>
+      <div class="feature-bullets">
+        <div class="feature-bullet">
+          <div class="feature-bullet-icon" style="background:var(--clr-red-dim);color:var(--clr-red)">🚨</div>
+          <span>Live emergency request management with AI department routing</span>
+        </div>
+        <div class="feature-bullet">
+          <div class="feature-bullet-icon" style="background:var(--clr-cyan-dim);color:var(--clr-cyan)">🗺️</div>
+          <span>Real-time ambulance tracking on OpenStreetMap</span>
+        </div>
+        <div class="feature-bullet">
+          <div class="feature-bullet-icon" style="background:var(--clr-green-dim);color:var(--clr-green)">🛏️</div>
+          <span>ICU, ventilator & bed management with live alerts</span>
+        </div>
+        <div class="feature-bullet">
+          <div class="feature-bullet-icon" style="background:var(--clr-amber-dim);color:var(--clr-amber)">📊</div>
+          <span>Analytics dashboards — response times, peak hours & more</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT LOGIN FORM ── -->
+  <div class="login-right">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">🏥</div>
+        <div>
+          <div class="login-title">AERS</div>
+          <div class="login-sub">Emergency Response System</div>
+        </div>
+      </div>
+
+      <h2 style="font-size:var(--text-xl);font-weight:var(--fw-bold);color:var(--clr-white);margin-bottom:0.5rem">Welcome back</h2>
+      <p style="font-size:var(--text-sm);color:var(--clr-text-muted);margin-bottom:2rem">Sign in with your hospital credentials</p>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email Address</label>
+          <input type="email" id="login-email" name="email" class="form-input"
+                 placeholder="you@hospital.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" name="password" class="form-input"
+                 placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+
+        <div id="login-error" class="login-error-msg"></div>
+
+        <button type="submit" class="btn btn-primary w-full btn-lg" id="login-btn">
+          <span id="login-spinner" class="login-spinner"></span>
+          <span id="login-btn-text">Sign In</span>
+        </button>
+      </form>
+
+      <div class="demo-hint">
+        <strong>Firebase Auth Required</strong><br>
+        Register users in your Firebase Console with an email/password.<br>
+        Roles are assigned based on email — see <code>js/auth.js</code>.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── FIREBASE + AUTH ── -->
+<script src="js/store.js"></script>
+<script type="module">
+  import { AuthService } from './js/auth.js';
+  // Make globally accessible
+  window.AuthService = AuthService;
+  AuthService.initLoginPage();
+</script>
+
+</body>
+</html>
