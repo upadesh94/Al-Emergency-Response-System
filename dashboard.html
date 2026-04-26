@@ -61,6 +61,12 @@
       <span class="nav-badge" id="nav-badge-emergency">6</span>
     </div>
 
+    <div class="nav-item" data-route="sos" id="nav-sos">
+      <span class="nav-icon" id="ni-sos"></span>
+      <span class="nav-label">SOS Alerts</span>
+      <span class="nav-badge" id="nav-badge-sos" style="display:none">0</span>
+    </div>
+
     <div class="nav-item" data-route="ambulance" id="nav-ambulance">
       <span class="nav-icon" id="ni-ambulance"></span>
       <span class="nav-label">Ambulance Tracking</span>
@@ -394,6 +400,41 @@
     </div>
 
     <div id="emergency-request-list" class="flex flex-col gap-4"></div>
+  </div>
+
+  <!-- ── 4B. SOS ALERTS ─────────────────────── -->
+  <div id="page-sos" class="section-page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">SOS Mobile Alerts</h1>
+        <p class="page-subtitle">Immediate emergency alerts sent directly from the mobile app</p>
+      </div>
+    </div>
+
+    <div class="grid grid-4 gap-4 mb-6" id="sos-stats">
+      <div class="stat-card red">
+        <div class="stat-icon">🚨</div>
+        <div class="stat-value" id="sos-stat-critical">—</div>
+        <div class="stat-label">Critical Alerts</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-value" id="sos-stat-pending">—</div>
+        <div class="stat-label">Pending SOS</div>
+      </div>
+      <div class="stat-card cyan">
+        <div class="stat-icon">📱</div>
+        <div class="stat-value" id="sos-stat-total">—</div>
+        <div class="stat-label">Total App SOS</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">🚑</div>
+        <div class="stat-value" id="sos-stat-enroute">—</div>
+        <div class="stat-label">Ambulances En Route</div>
+      </div>
+    </div>
+
+    <div id="sos-request-list" class="flex flex-col gap-4"></div>
   </div>
 
   <!-- ── 5. PRE-ADMISSION ───────────────────── -->
@@ -747,7 +788,7 @@
   if (logo) logo.innerHTML = I('hospital', 20);
   // Nav icons
   const navMap = {
-    'ni-dashboard': 'dashboard', 'ni-emergency': 'emergency', 'ni-ambulance': 'ambulance',
+    'ni-dashboard': 'dashboard', 'ni-emergency': 'emergency', 'ni-sos': 'alertTriangle', 'ni-ambulance': 'ambulance',
     'ni-beds': 'bed', 'ni-doctors': 'stethoscope', 'ni-pre': 'clipboard',
     'ni-analytics': 'analytics', 'ni-alerts': 'bell', 'ni-admin': 'shield', 'ni-public': 'globe'
   };
@@ -788,6 +829,7 @@
 <script src="js/beds.js"></script>
 <script src="js/doctors.js"></script>
 <script src="js/emergency.js"></script>
+<script src="js/sos.js"></script>
 <script src="js/preadmission.js"></script>
 <script src="js/ambulance.js"></script>
 <script src="js/analytics.js"></script>
@@ -835,6 +877,7 @@
     Router.register('beds',         () => initBeds());
     Router.register('doctors',      () => initDoctors());
     Router.register('emergency',    () => initEmergency());
+    Router.register('sos',          () => initSOS());
     Router.register('preadmission', () => initPreAdmission());
     Router.register('ambulance',    () => initAmbulance());
     Router.register('analytics',    () => initAnalytics());
@@ -936,6 +979,9 @@
     // to ensure they only happen after cloud data is loaded.
   });
 </script>
+
+<!-- SOS Mobile App Connector — polls Python backend for live emergencies -->
+<script src="js/sos-connector.js"></script>
 
 </body>
 </html>
